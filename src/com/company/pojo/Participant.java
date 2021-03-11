@@ -35,8 +35,25 @@ public class Participant {
      */
     private List<Poker> handCards = new ArrayList<>();
 
+    /**
+     * 构造函数
+     */
     private Participant(){
+        init();
+    }
+
+    /**
+     * 初始化用户节点
+     */
+    public void init(){
+        //已下筹码归零
         chipOnTable = 0;
+        //弃牌状态置为未弃牌
+        isDiscard = false;
+        //置为普通玩家
+        role = ROLE.Nomal;
+        //手牌重置
+        handCards.clear();
     }
     /**
      * 增加手牌
@@ -49,7 +66,7 @@ public class Participant {
     /**
      * 下筹码
      * @param chipNum
-     * @return
+     * @return false则破产了
      */
     public boolean chipMinus(int chipNum){
         if(chipNum> chipExist){
@@ -59,6 +76,16 @@ public class Participant {
         chipOnTable += chipNum;
         return true;
     }
+
+    /**
+     * 用于结算时增加筹码
+     * @param chipNum
+     * @return
+     */
+    public void chipPlus(int chipNum){
+        chipExist += chipNum;
+    }
+
 
     /**
      * 展示筹码数
@@ -86,6 +113,14 @@ public class Participant {
     public Participant(ROLE role, int chipExist) {
         this.role = role;
         this.chipExist = chipExist;
+    }
+
+    public ROLE getRole() {
+        return role;
+    }
+
+    public void setRole(ROLE role) {
+        this.role = role;
     }
 
     public int getChipExist() {
