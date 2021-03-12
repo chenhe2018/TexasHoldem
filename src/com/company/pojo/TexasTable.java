@@ -87,6 +87,36 @@ public class TexasTable {
     }
 
     /**
+     * 初始化函数
+     */
+    public void init() {
+        //调整庄家位置
+        this.bankerPosition = -1;
+        //筹码基线重置
+        this.theChipsBaseline=2;
+        //初始化玩家
+        this.participants = new ArrayList<>();
+        for(int i=0;i<peopleNumber;i++){
+            if(i== bankerPosition){
+                //庄家位
+                participants.add(new Participant(Participant.ROLE.BigBlindness,chipSum));
+            }else if(i==(bankerPosition -1+peopleNumber)%peopleNumber){
+                //小庄位
+                participants.add(new Participant(Participant.ROLE.SmallBlindness,chipSum));
+            }else{
+                //普通位
+                participants.add(new Participant(Participant.ROLE.Nomal,chipSum));
+            }
+        }
+        //输出游戏基础内容
+        System.out.println("======德州扑克======");
+        System.out.println("参与人数："+getPeopleNumber());
+        System.out.println("最小筹码："+getChipUnit());
+        System.out.println("初始金钱："+getChipSum());
+        System.out.println("本人位置:"+me);
+    }
+
+    /**
      * 游戏轮次构造函数
      */
     public void nextGame() {
@@ -131,38 +161,9 @@ public class TexasTable {
         //庄家下筹码
         participants.get(bankerPosition).chipMinus(2);
         participants.get((bankerPosition -1+peopleNumber)%peopleNumber).chipMinus(1);
-        System.out.println("发牌完成；第"+ bankerPosition +"号玩家下大筹2；第"+(bankerPosition -1+peopleNumber)+"号玩家下小筹1。");
+        System.out.println("发牌完成；第"+ (bankerPosition-1) +"号玩家下大筹2；第"+((bankerPosition -1+peopleNumber)-1)+"号玩家下小筹1。");
     }
 
-    /**
-     * 初始化函数
-     */
-    public void init() {
-        //调整庄家位置
-        this.bankerPosition = -1;
-        //筹码基线重置
-        theChipsBaseline=2;
-        //初始化玩家
-        participants = new ArrayList<>();
-        for(int i=0;i<peopleNumber;i++){
-            if(i== bankerPosition){
-                //庄家位
-                participants.add(new Participant(Participant.ROLE.BigBlindness,chipSum));
-            }else if(i==(bankerPosition -1+peopleNumber)%peopleNumber){
-                //小庄位
-                participants.add(new Participant(Participant.ROLE.SmallBlindness,chipSum));
-            }else{
-                //普通位
-                participants.add(new Participant(Participant.ROLE.Nomal,chipSum));
-            }
-        }
-        //输出游戏基础内容
-        System.out.println("======德州扑克======");
-        System.out.println("参与人数："+getPeopleNumber());
-        System.out.println("最小筹码："+getChipUnit());
-        System.out.println("初始金钱："+getChipSum());
-        System.out.println("本人位置:"+me);
-    }
 
 
     /**
@@ -176,9 +177,8 @@ public class TexasTable {
 //        }
         //决策//从庄家下家开始
         int firstChickenPos = (bankerPosition+1)%peopleNumber;
-        int lastChickenPos = (bankerPosition-1+peopleNumber)%peopleNumber;
-        //用于标识是否加注
-        for(int i=0;i<this.peopleNumber;i++){
+        //用于标识是否加注（去除庄家判定轮次）
+        for(int i=0;i<this.peopleNumber-1;i++){
             //定位具体位置
             int thisPos = (firstChickenPos + i)%peopleNumber;
             if(!participants.get(thisPos).isDiscard()){
@@ -186,30 +186,27 @@ public class TexasTable {
                 if(thisPos == me){
                     //本人操作
                     while (true){
-                        System.out.println("选择：1.查看手牌；2.查看筹码；3.check；4.弃牌；5.下基本筹；6.下翻倍筹；7.showhand；");
+                        System.out.println("选择：1.查看手牌；2.查看筹码；3.弃牌；4.下基本筹；5.下翻倍筹；6.showhand；");
                         int choice = scanner.nextInt();
                         if(choice == 1){
                             System.out.println(this.showMyCards());
                         }else if(choice == 2){
                             System.out.println(this.showMyChips());
                         }else if(choice == 3){
-                            System.out.println("玩家[" + thisPos + "]CHECK。");
-                            break;
-                        }else if(choice == 4){
                             participants.get(thisPos).setDiscard(true);
                             System.out.println("玩家[" + thisPos + "]弃牌。");
                             break;
-                        }else if(choice == 5){
+                        }else if(choice == 4){
                             realChip = theChipsBaseline;
                             participants.get(thisPos).chipMinus(realChip);
                             System.out.println("玩家[" + thisPos + "]跟注：" + realChip);
                             break;
-                        }else if(choice == 6){
+                        }else if(choice == 5){
                             realChip = theChipsBaseline * 2;
                             participants.get(thisPos).chipMinus(realChip);
                             System.out.println("玩家[" + thisPos + "]跟注：" + realChip);
                             break;
-                        }else if(choice == 7){
+                        }else if(choice == 6){
                             realChip = participants.get(thisPos).getChipExist();
                             participants.get(thisPos).chipMinus(realChip);
                             System.out.println("玩家[" + thisPos + "]跟注：" + realChip);
@@ -258,6 +255,75 @@ public class TexasTable {
                         default:
                             break;
                     }
+                }
+            }
+        }
+        //庄家判定轮次
+        boolean isRaise = false;//庄家加注判定
+        if(!participants.get(bankerPosition).isDiscard()){
+            int realChip = theChipsBaseline;
+            if(bankerPosition == me){
+                //本人操作
+                while (true){
+                    System.out.println("选择：1.查看手牌；2.查看筹码；3.check；4.下基本筹；5.下翻倍筹；6.showhand；");
+                    int choice = scanner.nextInt();
+                    if(choice == 1){
+                        System.out.println(this.showMyCards());
+                    }else if(choice == 2){
+                        System.out.println(this.showMyChips());
+                    }else if(choice == 3){
+                        isRaise=false;
+                        System.out.println("庄家[" + bankerPosition + "]CHECK。");
+                        break;
+                    }else if(choice == 4){
+                        isRaise=true;
+                        realChip = theChipsBaseline;
+                        participants.get(bankerPosition).chipMinus(realChip);
+                        System.out.println("庄家[" + bankerPosition + "]加注：" + realChip);
+                        break;
+                    }else if(choice == 5){
+                        isRaise=true;
+                        realChip = theChipsBaseline * 2;
+                        participants.get(bankerPosition).chipMinus(realChip);
+                        System.out.println("庄家[" + bankerPosition + "]加注：" + realChip);
+                        break;
+                    }else if(choice == 6){
+                        isRaise=true;
+                        realChip = participants.get(bankerPosition).getChipExist();
+                        participants.get(bankerPosition).chipMinus(realChip);
+                        System.out.println("庄家[" + bankerPosition + "]加注：" + realChip);
+                        break;
+                    }else {
+                        System.out.println("输入错误，重新输入。");
+                    }
+                }
+            }else{
+                //AI操作与选择
+                PokerStrategy.STRATEGY strategy = PokerStrategy.doCal(tableCards, participants.get(bankerPosition).getHandCards(),theChipsBaseline);
+                switch (strategy) {
+                    case DISCARD:
+                        //庄家位弃牌抉择时，默认Check
+                        isRaise=false;
+                        System.out.println("庄家[" + bankerPosition + "]CHECK。");
+                        break;
+                    case FOLLOW:
+                        isRaise=false;
+                        System.out.println("庄家[" + bankerPosition + "]CHECK。");
+                        break;
+                    case DOUBLE:
+                        theChipsBaseline *= 2;
+                        realChip = theChipsBaseline;
+                        participants.get(bankerPosition).chipMinus(realChip);
+                        System.out.println("庄家[" + bankerPosition + "]加注：" + realChip);
+                        break;
+                    case SHOWHAND:
+                        theChipsBaseline = participants.get(bankerPosition).getChipExist();
+                        realChip = theChipsBaseline;
+                        participants.get(bankerPosition).chipMinus(realChip);
+                        System.out.println("庄家[" + bankerPosition + "]全下：" + realChip);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
